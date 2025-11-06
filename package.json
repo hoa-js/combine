@@ -1,6 +1,6 @@
 {
   "name": "@hoajs/combine",
-  "version": "0.1.1",
+  "version": "0.1.0",
   "description": "combine middleware for Hoa.",
   "main": "./dist/cjs/index.js",
   "type": "module",
@@ -35,7 +35,10 @@
   "keywords": [
     "hoa",
     "middleware",
-    "combine"
+    "combine",
+    "except",
+    "some",
+    "every"
   ],
   "devDependencies": {
     "@commitlint/cli": "20.1.0",

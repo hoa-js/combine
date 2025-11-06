@@ -12,10 +12,9 @@ $ npm i @hoajs/combine --save
 
 ```js
 import { Hoa } from 'hoa'
-import { combine } from '@hoajs/combine'
+import { every, some, except } from '@hoajs/combine'
 
 const app = new Hoa()
-app.use(combine())
 
 app.use(async (ctx) => {
   ctx.res.body = `Hello, Hoa!`
