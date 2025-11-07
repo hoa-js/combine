@@ -12,13 +12,23 @@ $ npm i @hoajs/combine --save
 
 ```js
 import { Hoa } from 'hoa'
-import { every, some, except } from '@hoajs/combine'
+import { every, some } from '@hoajs/combine'
+import { RateLimiter } from '@hoajs/rate-limiter'
+import { basicAuth } from '@hoajs/basic-auth'
+import { ip } from '@hoajs/ip'
 
 const app = new Hoa()
 
-app.use(async (ctx) => {
-  ctx.res.body = `Hello, Hoa!`
-})
+app.use(
+  some(
+    every(
+      ip({ allowList: ['192.168.0.2'] }),
+      basicAuth({ username: 'admin', password: '123456' })
+    ),
+    // If both conditions are met, RateLimiter will not execute.
+    RateLimiter(...)
+  )
+)
 
 export default app
 ```

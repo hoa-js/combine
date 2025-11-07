@@ -1,7 +1,7 @@
 import type { HoaContext, HoaMiddleware } from 'hoa'
 import { compose } from 'hoa'
 
-type Condition = (ctx: HoaContext) => boolean | Promise<boolean>
+type Condition = (ctx: HoaContext) => boolean
 
 /**
  * Create a composed middleware that runs the first middleware that returns true.
@@ -28,7 +28,7 @@ export const some = (...middlewares: (HoaMiddleware | Condition)[]): HoaMiddlewa
         if (result === true) {
           await wrappedNext()
         } else if (result === false) {
-          lastError = new Error('No successful middleware found')
+          lastError = new Error(`combine some() failed: ${middleware.name || 'condition'} returned false`)
           continue
         }
         lastError = null
@@ -57,12 +57,12 @@ export const some = (...middlewares: (HoaMiddleware | Condition)[]): HoaMiddlewa
  * the evaluation will be halted, and rest of the middleware will not be executed.
  * @returns A composed middleware.
  */
-export const every = (...middlewares: (HoaMiddleware | Condition)[]) => {
+export const every = (...middlewares: (HoaMiddleware | Condition)[]): HoaMiddleware => {
   const handler = compose(middlewares.map((middleware) => {
-    return async function wrappedFunction (ctx, next) {
+    return async function every (ctx, next) {
       const result = await middleware(ctx, next)
       if (result === false) {
-        throw new Error('Unmet condition')
+        throw new Error(`combine every() failed: ${middleware.name || 'condition'} returned false`)
       }
       await next()
     } as HoaMiddleware
@@ -79,8 +79,8 @@ export const every = (...middlewares: (HoaMiddleware | Condition)[]) => {
  * @param middleware - A composed middleware
  * @returns A composed middleware.
  */
-export const except = (condition: Condition | Condition[], ...middlewares: HoaMiddleware[]) => {
+export const except = (condition: Condition | Condition[], ...middlewares: HoaMiddleware[]): HoaMiddleware => {
   const conditions = (Array.isArray(condition) ? condition : [condition])
-  const handler = some((ctx: HoaContext) => conditions.some((c) => c(ctx)), every(...middlewares))
+  const handler = some((ctx: HoaContext) => conditions.some((cond) => cond(ctx)), every(...middlewares))
   return handler
 }

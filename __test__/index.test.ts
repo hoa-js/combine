@@ -139,6 +139,19 @@ describe('combine middleware', () => {
       const response = await app.fetch(new Request('http://localhost/test'))
       expect(response.status).toBe(500)
     })
+
+    it('should throw error with "condition" in message when anonymous condition returns false', async () => {
+      const middleware1 = jest.fn().mockResolvedValue(true)
+      // Create a truly anonymous function by removing the name property
+      const anonymousCondition = (() => false) as any
+      Object.defineProperty(anonymousCondition, 'name', { value: '' })
+
+      app.get('/test', every(middleware1, anonymousCondition))
+
+      const response = await app.fetch(new Request('http://localhost/test'))
+      expect(response.status).toBe(500)
+      expect(middleware1).toHaveBeenCalled()
+    })
   })
 
   describe('except()', () => {
