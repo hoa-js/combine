@@ -13,7 +13,7 @@ $ npm i @hoajs/combine --save
 ```js
 import { Hoa } from 'hoa'
 import { every, some } from '@hoajs/combine'
-import { RateLimiter } from '@hoajs/rate-limiter'
+import { RateLimiter } from '@hoajs/cloudflare-rate-limit'
 import { basicAuth } from '@hoajs/basic-auth'
 import { ip } from '@hoajs/ip'
 
