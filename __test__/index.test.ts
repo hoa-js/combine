@@ -1,5 +1,5 @@
 import { Hoa } from 'hoa'
-import type { HoaContext } from 'hoa'
+import type { HoaContext, HoaMiddleware } from 'hoa'
 import { describe, it, expect, beforeEach, jest } from '@jest/globals'
 import { every, except, some } from '../src/index'
 import { tinyRouter } from '@hoajs/tiny-router'
@@ -223,5 +223,42 @@ describe('combine middleware', () => {
       expect(middleware1).toHaveBeenCalled()
       expect(middleware2).toHaveBeenCalled()
     })
+  })
+
+  it.each(['every', 'except'])('should run downstream once with %s', async (mode) => {
+    const app = new Hoa()
+    const order: string[] = []
+    const first = async (ctx, next) => { order.push('first'); await next(); order.push('first end') }
+    const second = async (ctx, next) => { order.push('second'); await next(); order.push('second end') }
+    app.use(mode === 'every' ? every(first, second) : except(() => false, first, second))
+    app.use(ctx => { order.push('handler'); ctx.res.body = 'ok' })
+    const response = await app.fetch(new Request('https://example.com/'))
+    expect(response.status).toBe(200)
+    expect(order).toEqual(['first', 'second', 'handler', 'second end', 'first end'])
+  })
+
+  it('should run downstream once when a some() candidate forwards and returns true', async () => {
+    const app = new Hoa()
+    let calls = 0
+    const forwardsThenTrue = async (ctx: HoaContext, next: () => Promise<void>) => {
+      await next()
+      return true
+    }
+    app.use(some(forwardsThenTrue as unknown as HoaMiddleware, () => false))
+    app.use((ctx: HoaContext) => { calls++; ctx.res.body = 'ok' })
+    const response = await app.fetch(new Request('https://example.com/'))
+    expect(response.status).toBe(200)
+    expect(calls).toBe(1)
+  })
+
+  it('should propagate downstream errors without trying another condition', async () => {
+    const app = new Hoa()
+    app.silent = true
+    let calls = 0
+    app.use(some(async (ctx, next) => { await next() }, () => true))
+    app.use(() => { calls++; throw new Error('downstream') })
+    const response = await app.fetch(new Request('https://example.com/'))
+    expect(response.status).toBe(500)
+    expect(calls).toBe(1)
   })
 })

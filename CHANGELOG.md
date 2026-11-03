@@ -1,3 +1,7 @@
+## v0.1.2 / 2026-11-03
+
+- fix: avoid duplicate downstream execution when combining middleware
+
 ## v0.1.1 / 2026-02-10
 
 - refactor: use tsdown instead of tsup

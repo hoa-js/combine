@@ -25,7 +25,7 @@ export const some = (...middlewares: (HoaMiddleware | Condition)[]): HoaMiddlewa
     for (const middleware of middlewares) {
       try {
         const result = await middleware(ctx, wrappedNext)
-        if (result === true) {
+        if (result === true && !isNextCalled) {
           await wrappedNext()
         } else if (result === false) {
           lastError = new Error(`combine some() failed: ${middleware.name || 'condition'} returned false`)
@@ -60,11 +60,15 @@ export const some = (...middlewares: (HoaMiddleware | Condition)[]): HoaMiddlewa
 export const every = (...middlewares: (HoaMiddleware | Condition)[]): HoaMiddleware => {
   const handler = compose(middlewares.map((middleware) => {
     return async function every (ctx, next) {
-      const result = await middleware(ctx, next)
+      let isNextCalled = false
+      const result = await middleware(ctx, () => {
+        isNextCalled = true
+        return next()
+      })
       if (result === false) {
         throw new Error(`combine every() failed: ${middleware.name || 'condition'} returned false`)
       }
-      await next()
+      if (!isNextCalled) await next()
     } as HoaMiddleware
   }))
   return handler
